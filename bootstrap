@@ -29,6 +29,9 @@ append_to_zshrc() {
   fi
 }
 
+# shellcheck disable=SC2154
+trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
+
 set -e
 
 HOMEBREW_PREFIX="/usr/local"
@@ -69,7 +72,7 @@ fi
 
 if brew list | grep -Fq brew-cask; then
   fancy_echo "Uninstalling old Homebrew-Cask ..."
-  brew uninstall --force brew-cask  
+  brew uninstall --force brew-cask
 fi
 
 fancy_echo "Updating Homebrew formulae ..."
