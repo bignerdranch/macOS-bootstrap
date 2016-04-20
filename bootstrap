@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Big Nerd Ranch iOS/Mac Laptop Setup Script
 # Heavily based on thoughtbot's laptop script https://github.com/thoughtbot/laptop/blob/master/mac
