@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Big Nerd Ranch iOS/Mac Laptop Setup Script
+# Big Nerd Ranch iOS/Mac Machine Bootstrap Script
 # Heavily based on thoughtbot's laptop script https://github.com/thoughtbot/laptop/blob/master/mac
 
 fancy_echo() {
