@@ -1,6 +1,8 @@
 Big Nerd Ranch iOS/Mac Machine Bootstrap Script
 ===============================================
 
+![](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap.svg?token=mjyegwmpGK1tsHqNiqGk&branch=master)
+
 Bootstrap script to get up and running developing iOS and Mac apps for Big Nerd Ranch
 
 It can be run multiple times on the same machine safely.
