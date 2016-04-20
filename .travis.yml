@@ -8,5 +8,4 @@ before_install:
     - sudo apt-get install shellcheck -y
     
 script:
-  - shellcheck mac
-  
+  - shellcheck bootstrap
