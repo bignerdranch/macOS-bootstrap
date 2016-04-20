@@ -1,9 +1,12 @@
 language: bash
+sudo: required
+dist: trusty
 
-addons:
-  apt:
-    packages:
-    - shellcheck
+before_install:
+    - echo "deb http://archive.ubuntu.com/ubuntu/ wily universe" | sudo tee -a /etc/apt/sources.list
+    - sudo apt-get update -q
+    - sudo apt-get install shellcheck -y
     
 script:
   - shellcheck mac
+  
