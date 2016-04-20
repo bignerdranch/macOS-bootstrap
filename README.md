@@ -18,12 +18,12 @@ We support:
 Install
 -------
 
-Download, review, then execute the script:
+Clone, review, then execute the script:
 
 ```bash
-curl --remote-name https://raw.githubusercontent.com/bignerdranch/cocoa-machine-bootstrap/master/bootstrap
-less bootstrap
-bash bootstrap 2>&1 | tee ~/bootstrap.log
+git clone git@github.com:bignerdranch/cocoa-machine-bootstrap.git
+less repo_path/bootstrap
+bash repo_path/bootstrap
 ```
 
 Debugging
