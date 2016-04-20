@@ -1,10 +1,9 @@
 language: bash
-sudo: required 
-dist: trusty
 
-before_script:
-  - sudo apt-get -qq -y update
-  - sudo apt-get install -y shellcheck
-
+addons:
+  apt:
+    packages:
+    - shellcheck
+    
 script:
   - shellcheck mac
