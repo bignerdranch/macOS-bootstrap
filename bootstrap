@@ -34,14 +34,14 @@ shellrc_path() {
     return 1
   fi
   
-  echo $path
+  echo "$path"
 }
 
 append_to_shellrc() {
   local text="$1" rcpath
   local skip_new_line="${2:-0}"
 
-  rcpath=`shellrc_path`
+  rcpath=$(shellrc_path)
 
   if [ "$?" -ne 0 ]; then
     echo "Unable to resolve your shell's startup config file path" 1>&2
