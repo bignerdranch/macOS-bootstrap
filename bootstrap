@@ -12,7 +12,9 @@ fancy_echo() {
 
 shellrc_path() {
   local path current_shell
-  current_shell=$( basename "$SHELL" )
+  
+  current_shell="$( basename "$SHELL" )"
+
   if [[ $current_shell = "zsh" ]]; then
     if [ -w "$HOME/.zshrc.local" ]; then
       path="$HOME/.zshrc.local"
@@ -20,17 +22,18 @@ shellrc_path() {
       path="$HOME/.zshrc"
     fi
   elif [[ "$current_shell" = "bash" ]]; then
-    local bash_profile="$HOME/.bash_profile"
-    if [ ! -e "$bash_profile" ] ; then
-      touch "$bash_profile"
-    fi
-    if [ ! -w "$bash_profile" ] ; then
-      fancy_echo "Cannot write to $bash_profile"
-      return 1
-    fi
-    path=$bash_profile
+    path="$HOME/.bash_profile"
   else
     fancy_echo "You're using a shell other than Zsh or Bash"
+    return 1
+  fi
+
+  if [ ! -e "$path" ] ; then
+      touch "$path"
+  fi
+  
+  if [ ! -w "$path" ] ; then
+    fancy_echo "Cannot write to $path"
     return 1
   fi
   
@@ -41,7 +44,7 @@ append_to_shellrc() {
   local text="$1" rcpath
   local skip_new_line="${2:-0}"
 
-  rcpath=$(shellrc_path)
+  rcpath="$(shellrc_path)"
 
   if [ "$?" -ne 0 ]; then
     echo "Unable to resolve your shell's startup config file path" 1>&2
