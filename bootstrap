@@ -12,14 +12,14 @@ fancy_echo() {
 
 shellrc_path() {
   local path
-  
-  if [[ $SHELL =~ "/bin/zsh" ]]; then
+  local current_shell=$( basename "$SHELL" )
+  if [[ $current_shell = "zsh" ]]; then
     if [ -w "$HOME/.zshrc.local" ]; then
       path="$HOME/.zshrc.local"
     else
       path="$HOME/.zshrc"
     fi
-  elif [[ "$SHELL" =~ "bin/bash" ]]; then
+  elif [[ "$current_shell" = "bash" ]]; then
     local bash_profile="$HOME/.bash_profile"
     if [ ! -e "$bash_profile" ] ; then
       touch "$bash_profile"
@@ -65,8 +65,8 @@ set -e
 HOMEBREW_PREFIX="/usr/local"
 
 # Check for supported shell
-shellrc_path
-fancy_echo "Shell startup configuration will be added to $rcpath"
+startup_path=$(shellrc_path)
+fancy_echo "Shell startup configuration will be added to: $startup_path"
 
 if [ -d "$HOMEBREW_PREFIX" ]; then
   if ! [ -r "$HOMEBREW_PREFIX" ]; then
