@@ -10,21 +10,49 @@ fancy_echo() {
   printf "\n$fmt\n" "$@"
 }
 
-append_to_zshrc() {
-  local text="$1" zshrc
+shellrc_path() {
+  local path
+  
+  if [[ $SHELL =~ "/bin/zsh" ]]; then
+    if [ -w "$HOME/.zshrc.local" ]; then
+      path="$HOME/.zshrc.local"
+    else
+      path="$HOME/.zshrc"
+    fi
+  elif [[ "$SHELL" =~ "bin/bash" ]]; then
+    local bash_profile="$HOME/.bash_profile"
+    if [ ! -e "$bash_profile" ] ; then
+      touch "$bash_profile"
+    fi
+    if [ ! -w "$bash_profile" ] ; then
+      fancy_echo "Cannot write to $bash_profile"
+      return 1
+    fi
+    path=$bash_profile
+  else
+    fancy_echo "You're using a shell other than Zsh or Bash"
+    return 1
+  fi
+  
+  echo $path
+}
+
+append_to_shellrc() {
+  local text="$1" rcpath
   local skip_new_line="${2:-0}"
 
-  if [ -w "$HOME/.zshrc.local" ]; then
-    zshrc="$HOME/.zshrc.local"
-  else
-    zshrc="$HOME/.zshrc"
+  rcpath=`shellrc_path`
+
+  if [ "$?" -ne 0 ]; then
+    echo "Unable to resolve your shell's startup config file path" 1>&2
+    exit 1
   fi
 
-  if ! grep -Fqs "$text" "$zshrc"; then
+  if ! grep -Fqs "$text" "$rcpath"; then
     if [ "$skip_new_line" -eq 1 ]; then
-      printf "%s\n" "$text" >> "$zshrc"
+      printf "%s\n" "$text" >> "$rcpath"
     else
-      printf "\n%s\n" "$text" >> "$zshrc"
+      printf "\n%s\n" "$text" >> "$rcpath"
     fi
   fi
 }
@@ -35,6 +63,10 @@ trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
 set -e
 
 HOMEBREW_PREFIX="/usr/local"
+
+# Check for supported shell
+shellrc_path
+fancy_echo "Shell startup configuration will be added to $rcpath"
 
 if [ -d "$HOMEBREW_PREFIX" ]; then
   if ! [ -r "$HOMEBREW_PREFIX" ]; then
@@ -55,17 +87,17 @@ gem_install_or_update() {
   fi
 }
 
-append_to_zshrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
+append_to_shellrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
 
 if ! command -v brew >/dev/null; then
   fancy_echo "Installing Homebrew ..."
     curl -fsS \
       'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
 
-    append_to_zshrc '# recommended by brew doctor'
+    append_to_shellrc '# recommended by brew doctor'
 
     # shellcheck disable=SC2016
-    append_to_zshrc 'export PATH="/usr/local/bin:$PATH"' 1
+    append_to_shellrc 'export PATH="/usr/local/bin:$PATH"' 1
 
     export PATH="/usr/local/bin:$PATH"
 fi
@@ -102,7 +134,7 @@ find_latest_ruby() {
 
 ruby_version="$(find_latest_ruby)"
 # shellcheck disable=SC2016
-append_to_zshrc 'eval "$(rbenv init - --no-rehash)"' 1
+append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
 eval "$(rbenv init -)"
 
 if ! rbenv versions | grep -Fq "$ruby_version"; then
