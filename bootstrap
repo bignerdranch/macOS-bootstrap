@@ -11,8 +11,8 @@ fancy_echo() {
 }
 
 shellrc_path() {
-  local path
-  local current_shell=$( basename "$SHELL" )
+  local path current_shell
+  current_shell=$( basename "$SHELL" )
   if [[ $current_shell = "zsh" ]]; then
     if [ -w "$HOME/.zshrc.local" ]; then
       path="$HOME/.zshrc.local"
