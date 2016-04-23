@@ -12,7 +12,12 @@ based on what is already installed on the machine.
 Requirements
 ------------
 
-We support:
+Shell:
+
+* [z shell](http://zsh.sourceforge.net/)
+* [bash](https://www.gnu.org/software/bash/)
+
+Operating System:
 
 * OS X Yosemite (10.10)
 * OS X El Capitan (10.11)
