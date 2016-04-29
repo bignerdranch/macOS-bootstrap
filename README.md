@@ -9,38 +9,6 @@ It can be run multiple times on the same machine safely.
 It installs, upgrades, or skips packages
 based on what is already installed on the machine.
 
-Requirements
-------------
-
-Shell:
-
-* [z shell](http://zsh.sourceforge.net/)
-* [bash](https://www.gnu.org/software/bash/)
-
-Operating System:
-
-* OS X Yosemite (10.10)
-* OS X El Capitan (10.11)
-
-Install
--------
-
-Clone, review, then execute the script:
-
-```bash
-git clone git@github.com:bignerdranch/cocoa-machine-bootstrap.git
-less repo_path/bootstrap
-bash repo_path/bootstrap
-```
-
-Debugging
----------
-
-Your last script run will be saved to `~/bootstrap.log`.
-Read through it to see if you can debug the issue yourself.
-If not, copy the lines where the script failed into a
-[new GitHub Issue](https://github.com/bignerdranch/cocoa-machine-bootstrap/issues/new).
-
 What it sets up
 ---------------
 
@@ -70,49 +38,157 @@ iOS and Mac tools:
 
 * [Carthage](https://github.com/Carthage/Carthage) for managing Cocoa libraries
 
-It should take less than 5 minutes to install (depends on your machine).
+It should take less than 15 minutes to install (depends on your machine).
 
-Customize in `~/.bootstrap.local`
-------------------------------
+Requirements
+------------
 
-Your `~/.bootstrap.local` is run at the end of the BNR Bootstrap script.
+Shell:
+
+* [z shell](http://zsh.sourceforge.net/)
+* [bash](https://www.gnu.org/software/bash/)
+
+Operating System:
+
+* OS X Yosemite (10.10)
+* OS X El Capitan (10.11)
+
+Install
+-------
+
+Clone, review, then execute the script:
+
+```bash
+git clone git@github.com:bignerdranch/cocoa-machine-bootstrap.git
+less repo_path/bootstrap
+bash repo_path/bootstrap
+```
+
+Customize in bootstrap.local and 'Brewfile.local'
+---------------------------------------------------
+
+### Brewfile.local
+
+A [Brewfile](https://github.com/Homebrew/homebrew-bundle) is like a Gemfile for non-ruby dependencies. Anything you would install via [homebrew](http://brew.sh/) you can drop into your `Brewfile.local` and it will be installed during the bootstrap script.
+
+An example Brewfile looks like this:
+```ruby
+tap 'homebrew/bundle'
+tap 'thoughtbot/formulae'
+tap 'kevwil/patches'
+
+brew 'ack'
+brew 'git'
+brew 'carthage'
+brew 'chisel'
+brew 'openssl'
+brew 'fish'
+brew 'gifsicle'
+brew 'go'
+brew 'heroku'
+brew 'irssi'
+brew 'keybase'
+brew 'leiningen'
+brew 'mogenerator'
+brew 'mutt'
+brew 'node'
+brew 'pandoc'
+brew 'ruby-build'
+brew 'rbenv'
+brew 'redis'
+brew 'the_silver_searcher'
+brew 'tmux'
+brew 'xcproj'
+brew 'xctool'
+brew 'rcm'	
+``` 
+
+### bootstrap.local
+
+Your `bootstrap.local` is run at the end of the BNR Bootstrap script.
 Put your customizations there.
-For example:
+For example here is my .local:
 
-```sh
-#!/bin/sh
+```bash
+#!/bin/bash
 
-brew bundle --file=- <<EOF
-brew "Caskroom/cask/dockertoolbox"
-brew "go"
-brew "ngrok"
-brew "watch"
-EOF
+readonly prefsLocalCheckoutPath="$HOME/app_prefs"
 
-default_docker_machine() {
-  docker-machine ls | grep -Fq "default"
-}
-
-if ! default_docker_machine; then
-  docker-machine create --driver virtualbox default
-fi
-
-default_docker_machine_running() {
-  default_docker_machine | grep -Fq "Running"
-}
-
-if ! default_docker_machine_running; then
-  docker-machine start default
-fi
-
-fancy_echo "Cleaning up old Homebrew formulae ..."
-brew cleanup
-brew cask cleanup
-
-if [ -r "$HOME/.rcrc" ]; then
+update_dotfiles() {
   fancy_echo "Updating dotfiles ..."
-  rcup
-fi
+
+  local dotfilesLocalCheckoutPath="$HOME/dotfiles"
+  local dotfilesRepoURL="git@github.com:rcedwards/dotfiles.git"
+
+  if [ -r "$dotfilesLocalCheckoutPath" ]; then
+    fancy_echo "Refreshing dotfiles from $dotfilesRepoURL ..."
+    update_cloned_repo "$dotfilesLocalCheckoutPath"
+  else
+    fancy_echo "Cloning dotfiles ..."
+    git clone "$dotfilesRepoURL" "$dotfilesLocalCheckoutPath"
+  fi
+
+  fancy_echo "Running rcm ..."
+  if [ -r "$HOME/.rcrc" ]; then
+    rcup
+  else
+    env RCRC="$dotfilesLocalCheckoutPath/rcrc" rcup
+  fi
+}
+
+fetch_application_preferences() {
+  fancy_echo "Setting up other app preferences ..."
+  
+  local prefsRepoURL="git@github.com:rcedwards/app_prefs"
+
+  if [ -r "$prefsLocalCheckoutPath" ]; then
+    fancy_echo "Updating application preferences from $prefsRepoURL ..."
+    update_cloned_repo "$prefsLocalCheckoutPath"
+  else
+    fancy_echo "Cloning application preferences ..."
+    git clone "$prefsRepoURL" "$prefsLocalCheckoutPath"
+  fi
+}
+
+update_cloned_repo() {
+  pushd "$1"
+  git pull
+  popd
+}
+
+link_sublime_text_prefs() {
+  fancy_echo "Linking sublime text configuration files ..."
+  local prefDestination="$HOME/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings"
+  local prefSource="$prefsLocalCheckoutPath/sublime/Preferences.sublime-settings"
+  ln -sF "$prefSource" "$prefDestination"
+}
+
+link_xcode_prefs() {
+  fancy_echo "Linking xcode configuration files ..."
+  local destThemeFolder="$HOME/Library/Developer/Xcode/UserData/FontAndColorThemes"
+  local destSnippetsFolder="$HOME/Library/Developer/Xcode/UserData/CodeSnippets"
+  local sourceThemeFolder="$prefsLocalCheckoutPath/xcode_config/FontAndColorThemes"
+  local sourceSnippetsFolder="$prefsLocalCheckoutPath/xcode_config/CodeSnippets"
+  ln -sF "$sourceThemeFolder" "$destThemeFolder"
+  ln -sF "$sourceSnippetsFolder" "$destSnippetsFolder"
+}
+
+link_zsh_theme() {
+  fancy_echo "Linking oh-my-zsh theme ..."
+  local zshThemeDest="$HOME/.oh-my-zsh/themes/agnoster-light.zsh-theme"
+  local zshThemeSource="$prefsLocalCheckoutPath/zsh_themes/agnoster-light.zsh-theme"
+  ln -sF "$zshThemeSource" "$zshThemeDest"
+}
+
+link_application_preferences() {
+  link_sublime_text_prefs
+  link_xcode_prefs
+  link_zsh_theme
+}
+
+update_dotfiles
+fetch_application_preferences
+link_application_preferences
 ```
 
 Write your customizations such that they can be run safely more than once.
@@ -124,6 +200,14 @@ can be used in your `~/.bootstrap.local`.
 
 See the [wiki](https://github.com/thoughtbot/laptop/wiki)
 for more customization examples.
+
+Debugging
+---------
+
+Your last script run will be saved to `~/bootstrap.log`.
+Read through it to see if you can debug the issue yourself.
+If not, copy the lines where the script failed into a
+[new GitHub Issue](https://github.com/bignerdranch/cocoa-machine-bootstrap/issues/new).
 
 License
 -------
