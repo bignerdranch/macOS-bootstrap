@@ -133,6 +133,11 @@ brew "ruby-build"
 
 EOF
 
+if [ -r Brewfile.local ]; then
+  fancy_echo "Installing local brews from Brewfile.local"
+  brew bundle --file=Brewfile.local
+fi
+
 fancy_echo "Configuring Ruby ..."
 find_latest_ruby() {
   rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
