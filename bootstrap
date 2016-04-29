@@ -154,8 +154,8 @@ gem_install_or_update 'bundler'
 number_of_cores=$(sysctl -n hw.ncpu)
 bundle config --global jobs $((number_of_cores - 1))
 
-if [ -f "$HOME/.bootstrap.local" ]; then
-  fancy_echo "Running your customizations from ~/.bootstrap.local ..."
+if [ -f "bootstrap.local" ]; then
+  fancy_echo "Running your customizations from bootstrap.local ..."
   # shellcheck disable=SC1090
-  . "$HOME/.bootstrap.local"
+  . "bootstrap.local"
 fi
