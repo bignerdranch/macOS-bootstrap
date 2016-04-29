@@ -64,7 +64,7 @@ less repo_path/bootstrap
 bash repo_path/bootstrap
 ```
 
-Customize in bootstrap.local and 'Brewfile.local'
+Customize in bootstrap.local and Brewfile.local
 ---------------------------------------------------
 
 ### Brewfile.local

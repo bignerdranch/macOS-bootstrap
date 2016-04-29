@@ -161,6 +161,6 @@ bundle config --global jobs $((number_of_cores - 1))
 
 if [ -f "bootstrap.local" ]; then
   fancy_echo "Running your customizations from bootstrap.local ..."
-  # shellcheck disable=SC1090
+  # shellcheck disable=SC1091
   . "bootstrap.local"
 fi
