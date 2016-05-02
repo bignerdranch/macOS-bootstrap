@@ -16,7 +16,7 @@ shellrc_path() {
   current_shell="$( basename "$SHELL" )"
 
   if [[ $current_shell = "zsh" ]]; then
-    if [ -w "$HOME/.zshrc.local" ]; then
+    if [[ -w "$HOME/.zshrc.local" ]]; then
       path="$HOME/.zshrc.local"
     else
       path="$HOME/.zshrc"
@@ -28,11 +28,11 @@ shellrc_path() {
     return 1
   fi
 
-  if [ ! -e "$path" ] ; then
+  if [[ ! -e "$path" ]] ; then
       touch "$path"
   fi
 
-  if [ ! -w "$path" ] ; then
+  if [[ ! -w "$path" ]] ; then
     fancy_echo "Cannot write to $path"
     return 1
   fi
@@ -46,13 +46,13 @@ append_to_shellrc() {
 
   rcpath="$(shellrc_path)"
 
-  if [ "$?" -ne 0 ]; then
+  if [[ "$?" -ne 0 ]]; then
     echo "Unable to resolve your shell's startup config file path" 1>&2
     exit 1
   fi
 
   if ! grep -Fqs "$text" "$rcpath"; then
-    if [ "$skip_new_line" -eq 1 ]; then
+    if [[ "$skip_new_line" -eq 1 ]]; then
       printf "%s\n" "$text" >> "$rcpath"
     else
       printf "\n%s\n" "$text" >> "$rcpath"
@@ -66,7 +66,7 @@ trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
 set -e
 
 HOMEBREW_PREFIX="$(brew --prefix)"
-if [ ! -e "$HOMEBREW_PREFIX" ] ; then
+if [[ ! -e "$HOMEBREW_PREFIX" ]]; then
   HOMEBREW_PREFIX="/usr/local"
 fi
 
@@ -74,8 +74,8 @@ fi
 startup_path=$(shellrc_path)
 fancy_echo "Shell startup configuration will be added to: $startup_path"
 
-if [ -d "$HOMEBREW_PREFIX" ]; then
-  if ! [ -r "$HOMEBREW_PREFIX" ]; then
+if [[ -d "$HOMEBREW_PREFIX" ]]; then
+  if ! [[ -r "$HOMEBREW_PREFIX" ]]; then
     sudo chown -R "$LOGNAME:admin" /usr/local
   fi
 else
@@ -133,7 +133,7 @@ brew "ruby-build"
 
 EOF
 
-if [ -r Brewfile.local ]; then
+if [[ -r Brewfile.local ]]; then
   fancy_echo "Installing local brews from Brewfile.local"
   brew bundle --file=Brewfile.local
 fi
@@ -159,7 +159,7 @@ gem_install_or_update 'bundler'
 number_of_cores=$(sysctl -n hw.ncpu)
 bundle config --global jobs $((number_of_cores - 1))
 
-if [ -f "bootstrap.local" ]; then
+if [[ -f "bootstrap.local" ]]; then
   fancy_echo "Running your customizations from bootstrap.local ..."
   # shellcheck disable=SC1091
   . "bootstrap.local"
