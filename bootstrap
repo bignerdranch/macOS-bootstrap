@@ -75,7 +75,7 @@ startup_path=$(shellrc_path)
 fancy_echo "Shell startup configuration will be added to: $startup_path"
 
 if [[ -d "$HOMEBREW_PREFIX" ]]; then
-  if ! [[ -r "$HOMEBREW_PREFIX" ]]; then
+  if [[ ! -r "$HOMEBREW_PREFIX" ]]; then
     sudo chown -R "$LOGNAME:admin" "$HOMEBREW_PREFIX"
   fi
 else
