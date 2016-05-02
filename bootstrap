@@ -76,7 +76,7 @@ fancy_echo "Shell startup configuration will be added to: $startup_path"
 
 if [[ -d "$HOMEBREW_PREFIX" ]]; then
   if ! [[ -r "$HOMEBREW_PREFIX" ]]; then
-    sudo chown -R "$LOGNAME:admin" /usr/local
+    sudo chown -R "$LOGNAME:admin" "$HOMEBREW_PREFIX"
   fi
 else
   sudo mkdir "$HOMEBREW_PREFIX"
@@ -103,9 +103,9 @@ if ! command -v brew >/dev/null; then
     append_to_shellrc '# recommended by brew doctor'
 
     # shellcheck disable=SC2016
-    append_to_shellrc 'export PATH="/usr/local/bin:$PATH"' 1
+    append_to_shellrc 'export PATH="$HOMEBREW_PREFIX/bin:$PATH"' 1
 
-    export PATH="/usr/local/bin:$PATH"
+    export PATH="$HOMEBREW_PREFIX/bin:$PATH"
 fi
 
 if brew list | grep -Fq brew-cask; then
@@ -149,7 +149,7 @@ append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
 eval "$(rbenv init -)"
 
 if ! rbenv versions | grep -Fq "$ruby_version"; then
-  RUBY_CONFIGURE_OPTS=--with-openssl-dir=/usr/local/opt/openssl rbenv install -s "$ruby_version"
+  RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" rbenv install -s "$ruby_version"
 fi
 
 rbenv global "$ruby_version"
