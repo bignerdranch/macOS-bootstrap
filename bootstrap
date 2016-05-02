@@ -28,11 +28,11 @@ shellrc_path() {
     return 1
   fi
 
-  if [[ ! -e "$path" ]] ; then
+  if [[ ! -e "$path" ]]; then
       touch "$path"
   fi
 
-  if [[ ! -w "$path" ]] ; then
+  if [[ ! -w "$path" ]]; then
     fancy_echo "Cannot write to $path"
     return 1
   fi
