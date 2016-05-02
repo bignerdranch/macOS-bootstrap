@@ -12,7 +12,7 @@ fancy_echo() {
 
 shellrc_path() {
   local path current_shell
-  
+
   current_shell="$( basename "$SHELL" )"
 
   if [[ $current_shell = "zsh" ]]; then
@@ -31,12 +31,12 @@ shellrc_path() {
   if [ ! -e "$path" ] ; then
       touch "$path"
   fi
-  
+
   if [ ! -w "$path" ] ; then
     fancy_echo "Cannot write to $path"
     return 1
   fi
-  
+
   echo "$path"
 }
 
