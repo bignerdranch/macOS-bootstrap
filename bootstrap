@@ -74,14 +74,15 @@ fi
 startup_path=$(shellrc_path)
 fancy_echo "Shell startup configuration will be added to: $startup_path"
 
+current_group_name="$(id -ng)"
 if [[ -d "$HOMEBREW_PREFIX" ]]; then
   if [[ ! -r "$HOMEBREW_PREFIX" ]]; then
-    sudo chown -R "$LOGNAME:admin" "$HOMEBREW_PREFIX"
+    sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
   fi
 else
   sudo mkdir "$HOMEBREW_PREFIX"
   sudo chflags norestricted "$HOMEBREW_PREFIX"
-  sudo chown -R "$LOGNAME:admin" "$HOMEBREW_PREFIX"
+  sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
 fi
 
 gem_install_or_update() {
