@@ -67,7 +67,8 @@ append_to_shellrc() {
 die() {
     local message
 
-    message="$1"
+    # ${FUNCNAME[1]} evaluates to the name of the calling function.
+    message="${FUNCNAME[1]}: $1"
     echo "$1" 1>&2
     exit 1
 }
