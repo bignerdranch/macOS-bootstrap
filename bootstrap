@@ -10,6 +10,7 @@ fancy_echo() {
   printf "\n$fmt\n" "$@"
 }
 
+
 shellrc_path() {
   local path current_shell
 
@@ -24,7 +25,7 @@ shellrc_path() {
   elif [[ "$current_shell" = "bash" ]]; then
     path="$HOME/.bash_profile"
   else
-    fancy_echo "You're using a shell other than Zsh or Bash"
+    echo "/dev/stdout"
     return 1
   fi
 
@@ -34,6 +35,7 @@ shellrc_path() {
 
   if [[ ! -w "$path" ]]; then
     fancy_echo "Cannot write to $path"
+    echo "/dev/stdout"
     return 1
   fi
 
@@ -47,12 +49,7 @@ append_to_shellrc() {
 
   rcpath="$(shellrc_path)"
 
-  if [[ "$?" -ne 0 ]]; then
-    echo "Unable to resolve your shell's startup config file path" 1>&2
-    exit 1
-  fi
-
-  if ! grep -Fqs "$text" "$rcpath"; then
+  if ! grep -Fqs "$text" "$rcpath" >/dev/null 2>&1; then
     if [[ "$skip_new_line" -eq 1 ]]; then
       printf "%s\n" "$text" >> "$rcpath"
     else
