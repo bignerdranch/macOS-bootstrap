@@ -11,4 +11,11 @@ before_install:
     - sudo apt-get install shellcheck -y
     
 script:
-  - shellcheck bootstrap
+  # Run shellcheck with some diagnostic exclusions:
+  #
+  # SC2128: Expanding an array without an index only gives the first element.
+  #   We use this intentionally because $FUNCNAME is a lot less ugly than
+  #   ${FUNCNAME[0]}.
+  # SC2015: Note that A && B || C is not if-then-else. C may run when A is true.
+  #   Gee, thanks. Yeah, it's "run C the first time any one of A or B fails".
+  - shellcheck --exclude SC2128,SC2015 bootstrap
