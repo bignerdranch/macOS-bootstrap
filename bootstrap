@@ -125,9 +125,10 @@ ensure_homebrew_prefix_usable() {
   echo "$FUNCNAME: $HOMEBREW_PREFIX should be usable by homebrew now."
 }
 
+
 update_homebrew() {
   if ! command -v brew >/dev/null; then
-    fancy_echo "Installing Homebrew ..."
+    fancy_echo "$FUNCNAME: Installing Homebrew, a handy OS X package manager (see http://brew.sh)."
       curl -fsS \
         'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
 
@@ -140,33 +141,21 @@ update_homebrew() {
   fi
 
   if brew list | grep -Fq brew-cask; then
+    fancy_echo "$FUNCNAME: Looks like you still have the old brew-cask formula installed. Since December 2015, brew-cask is updated along with Homebrew itself, and the old formula should be installed. Let's take care of that. (If you want to read more, see: https://github.com/caskroom/homebrew-cask/pull/15381)"
     fancy_echo "Uninstalling old Homebrew-Cask ..."
-    brew uninstall --force brew-cask \
-      || die "failed to uninstall brew-cask"
+    brew uninstall --force brew-cask
   fi
 
-  fancy_echo "Updating Homebrew formulae ..."
+  echo "$FUNCNAME: Updating local package repository"
   brew update
-  brew bundle --file=- <<EOF
-# Unix
-brew "git"
-brew "openssl"
 
-# GitHub
-brew "hub"
+  echo "$FUNCNAME: Installing/updating some CocoaPod essentials:"
+  cat Brewfile
+  brew bundle --verbose
 
-# iOS/Mac
-brew "carthage"
-
-# Programming languages
-brew "rbenv"
-brew "ruby-build"
-
-EOF
-
-  if [[ -r Brewfile.local ]]; then
-    fancy_echo "Installing local brews from Brewfile.local"
-    brew bundle --file=Brewfile.local
+  if [[ -r "$HOME/.Brewfile" ]]; then
+    echo "$FUNCNAME: Installing/upgrading formulae listed in $HOME/.Brewfile."
+    brew bundle --global --verbose
   fi
 }
 
