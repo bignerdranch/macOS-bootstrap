@@ -166,19 +166,28 @@ find_latest_ruby() {
 
 
 adopt_latest_ruby() {
+  fancy_echo "$FUNCNAME: Activating rbenv"
   # shellcheck disable=SC2016
   append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
   eval "$(rbenv init -)"
 
   ruby_version="$(find_latest_ruby)"
+  echo "$FUNCNAME: Latest ruby is $ruby_version."
 
   if ! rbenv versions | grep -Fq "$ruby_version"; then
-    RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" rbenv install -s "$ruby_version"
+    echo "$FUNCNAME: Ruby $ruby_version is not installed. Installing..."
+    RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" \
+      rbenv install -s "$ruby_version"
   fi
 
+  echo "$FUNCNAME: Setting global and shell Ruby versions to $ruby_version"
   rbenv global "$ruby_version"
   rbenv shell "$ruby_version"
+
+  echo "$FUNCNAME: Updating system gems..."
   gem update --system
+
+  echo "$FUNCNAME: All done. Welcome to the brave new world of Ruby $ruby_version."
 }
 
 
@@ -187,21 +196,28 @@ install_or_update_gem() {
     gem update "$@"
   else
     gem install "$@"
-    rbenv rehash
   fi
+  rbenv rehash
 }
 
 
 setup_bundler() {
+  local number_of_cores
+  local jobcount
+
+  fancy_echo "$FUNCNAME: Ensuring you have the bundler gem installed. This is used to create reliable, reproducible Ruby gem environments during development. Read more at: http://bundler.io/"
   install_or_update_gem 'bundler'
+
   number_of_cores=$(sysctl -n hw.ncpu)
-  bundle config --global jobs $((number_of_cores - 1))
+  jobcount=$((number_of_cores - 1))
+  bundle config --global jobs $jobcount
+  echo "$FUNCNAME: Configured bundler to run up to $jobcount jobs simultaneously, and you're good to go!"
 }
 
 
 run_bootstrap_local() {
   if [[ -f "bootstrap.local" ]]; then
-    fancy_echo "Running your customizations from bootstrap.local ..."
+    fancy_echo "Running your customizations from ./bootstrap.local..."
     # shellcheck disable=SC1091
     . "bootstrap.local"
   fi
