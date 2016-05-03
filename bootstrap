@@ -160,16 +160,17 @@ update_homebrew() {
 }
 
 
-adopt_latest_ruby() {
-  fancy_echo "Configuring Ruby ..."
-  find_latest_ruby() {
-    rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
-  }
+find_latest_ruby() {
+  rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
+}
 
-  ruby_version="$(find_latest_ruby)"
+
+adopt_latest_ruby() {
   # shellcheck disable=SC2016
   append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
   eval "$(rbenv init -)"
+
+  ruby_version="$(find_latest_ruby)"
 
   if ! rbenv versions | grep -Fq "$ruby_version"; then
     RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" rbenv install -s "$ruby_version"
