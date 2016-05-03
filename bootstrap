@@ -68,8 +68,9 @@ die() {
     local message
 
     # ${FUNCNAME[1]} evaluates to the name of the calling function.
-    message="${FUNCNAME[1]}: $1"
-    echo "$1" 1>&2
+    message="${FUNCNAME[1]}: fatal error: *** $1"
+
+    echo "$message" 1>&2
     exit 1
 }
 
