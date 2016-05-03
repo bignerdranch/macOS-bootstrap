@@ -40,6 +40,7 @@ shellrc_path() {
   echo "$path"
 }
 
+
 append_to_shellrc() {
   local text="$1" rcpath
   local skip_new_line="${2:-0}"
@@ -65,59 +66,61 @@ trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
 
 set -e
 
-HOMEBREW_PREFIX="$(brew --prefix)"
-if [[ ! -e "$HOMEBREW_PREFIX" ]]; then
-  HOMEBREW_PREFIX="/usr/local"
-fi
 
-# Check for supported shell
-startup_path=$(shellrc_path)
-fancy_echo "Shell startup configuration will be added to: $startup_path"
+set -e
 
-current_group_name="$(id -ng)"
-if [[ -d "$HOMEBREW_PREFIX" ]]; then
-  if [[ ! -r "$HOMEBREW_PREFIX" ]]; then
-    sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
-  fi
-else
-  sudo mkdir "$HOMEBREW_PREFIX"
-  sudo chflags norestricted "$HOMEBREW_PREFIX"
-  sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
-fi
 
-gem_install_or_update() {
-  if gem list "$1" --installed > /dev/null; then
-    gem update "$@"
+announce_editing_shell_runconfig() {
+  startup_path=$(shellrc_path)
+  if [[ "$?" -ne 0 ]]; then
+    fancy_echo "Don't know how to hack your $SHELL rcfile. Intended changes will be logged using bash syntax; feel free to adapt to your shell."
   else
-    gem install "$@"
-    rbenv rehash
+    fancy_echo "Shell startup configuration will be added to: $startup_path"
+  fi
+  append_to_shellrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
+}
+
+
+ensure_homebrew_prefix_usable() {
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  if [[ ! -e "$HOMEBREW_PREFIX" ]]; then
+    HOMEBREW_PREFIX="/usr/local"
+  fi
+
+  current_group_name="$(id -ng)"
+  if [[ -d "$HOMEBREW_PREFIX" ]]; then
+    if [[ ! -r "$HOMEBREW_PREFIX" ]]; then
+      sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
+    fi
+  else
+    sudo mkdir "$HOMEBREW_PREFIX"
+    sudo chflags norestricted "$HOMEBREW_PREFIX"
+    sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX"
   fi
 }
 
-append_to_shellrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
+update_homebrew() {
+  if ! command -v brew >/dev/null; then
+    fancy_echo "Installing Homebrew ..."
+      curl -fsS \
+        'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
 
-if ! command -v brew >/dev/null; then
-  fancy_echo "Installing Homebrew ..."
-    curl -fsS \
-      'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
+      append_to_shellrc '# recommended by brew doctor'
 
-    append_to_shellrc '# recommended by brew doctor'
+      # shellcheck disable=SC2016
+      append_to_shellrc 'export PATH="$HOMEBREW_PREFIX/bin:$PATH"' 1
 
-    # shellcheck disable=SC2016
-    append_to_shellrc 'export PATH="$HOMEBREW_PREFIX/bin:$PATH"' 1
+      export PATH="$HOMEBREW_PREFIX/bin:$PATH"
+  fi
 
-    export PATH="$HOMEBREW_PREFIX/bin:$PATH"
-fi
+  if brew list | grep -Fq brew-cask; then
+    fancy_echo "Uninstalling old Homebrew-Cask ..."
+    brew uninstall --force brew-cask
+  fi
 
-if brew list | grep -Fq brew-cask; then
-  fancy_echo "Uninstalling old Homebrew-Cask ..."
-  brew uninstall --force brew-cask
-fi
-
-fancy_echo "Updating Homebrew formulae ..."
-brew update
-brew bundle --file=- <<EOF
-
+  fancy_echo "Updating Homebrew formulae ..."
+  brew update
+  brew bundle --file=- <<EOF
 # Unix
 brew "git"
 brew "openssl"
@@ -134,34 +137,69 @@ brew "ruby-build"
 
 EOF
 
-if [[ -r Brewfile.local ]]; then
-  fancy_echo "Installing local brews from Brewfile.local"
-  brew bundle --file=Brewfile.local
-fi
-
-fancy_echo "Configuring Ruby ..."
-find_latest_ruby() {
-  rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
+  if [[ -r Brewfile.local ]]; then
+    fancy_echo "Installing local brews from Brewfile.local"
+    brew bundle --file=Brewfile.local
+  fi
 }
 
-ruby_version="$(find_latest_ruby)"
-# shellcheck disable=SC2016
-append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
-eval "$(rbenv init -)"
 
-if ! rbenv versions | grep -Fq "$ruby_version"; then
-  RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" rbenv install -s "$ruby_version"
-fi
+adopt_latest_ruby() {
+  fancy_echo "Configuring Ruby ..."
+  find_latest_ruby() {
+    rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
+  }
 
-rbenv global "$ruby_version"
-rbenv shell "$ruby_version"
-gem update --system
-gem_install_or_update 'bundler'
-number_of_cores=$(sysctl -n hw.ncpu)
-bundle config --global jobs $((number_of_cores - 1))
+  ruby_version="$(find_latest_ruby)"
+  # shellcheck disable=SC2016
+  append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
+  eval "$(rbenv init -)"
 
-if [[ -f "bootstrap.local" ]]; then
-  fancy_echo "Running your customizations from bootstrap.local ..."
-  # shellcheck disable=SC1091
-  . "bootstrap.local"
-fi
+  if ! rbenv versions | grep -Fq "$ruby_version"; then
+    RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" rbenv install -s "$ruby_version"
+  fi
+
+  rbenv global "$ruby_version"
+  rbenv shell "$ruby_version"
+  gem update --system
+}
+
+
+install_or_update_gem() {
+  if gem list "$1" --installed > /dev/null; then
+    gem update "$@"
+  else
+    gem install "$@"
+    rbenv rehash
+  fi
+}
+
+
+setup_bundler() {
+  install_or_update_gem 'bundler'
+  number_of_cores=$(sysctl -n hw.ncpu)
+  bundle config --global jobs $((number_of_cores - 1))
+}
+
+
+run_bootstrap_local() {
+  if [[ -f "bootstrap.local" ]]; then
+    fancy_echo "Running your customizations from bootstrap.local ..."
+    # shellcheck disable=SC1091
+    . "bootstrap.local"
+  fi
+}
+
+
+set -x
+main() {
+  announce_editing_shell_runconfig
+  ensure_homebrew_prefix_usable
+  update_homebrew
+  adopt_latest_ruby
+  setup_bundler
+  run_bootstrap_local
+}
+
+
+main
