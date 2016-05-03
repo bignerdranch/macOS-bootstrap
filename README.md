@@ -64,12 +64,12 @@ less repo_path/bootstrap
 bash repo_path/bootstrap
 ```
 
-Customize in bootstrap.local and Brewfile.local
+Customize in `bootstrap.local` and `~/.Brewfile`
 ---------------------------------------------------
 
-### Brewfile.local
+### Local Brewfile
 
-A [Brewfile](https://github.com/Homebrew/homebrew-bundle) is like a Gemfile for non-ruby dependencies. Anything you would install via [homebrew](http://brew.sh/) you can drop into your `Brewfile.local` and it will be installed during the bootstrap script.
+A [Brewfile](https://github.com/Homebrew/homebrew-bundle) is like a Gemfile for non-ruby dependencies. Anything you would install via [homebrew](http://brew.sh/) you can drop into your `~/.Brewfile` and it will be installed during the bootstrap script.
 
 An example Brewfile looks like this:
 ```ruby
