@@ -10,13 +10,14 @@ fancy_echo() {
   printf "\n$fmt\n" "$@"
 }
 
+
 shellrc_path() {
   local path current_shell
-  
+
   current_shell="$( basename "$SHELL" )"
 
   if [[ $current_shell = "zsh" ]]; then
-    if [ -w "$HOME/.zshrc.local" ]; then
+    if [[ -w "$HOME/.zshrc.local" ]]; then
       path="$HOME/.zshrc.local"
     else
       path="$HOME/.zshrc"
@@ -24,21 +25,23 @@ shellrc_path() {
   elif [[ "$current_shell" = "bash" ]]; then
     path="$HOME/.bash_profile"
   else
-    fancy_echo "You're using a shell other than Zsh or Bash"
+    echo "/dev/stdout"
     return 1
   fi
 
-  if [ ! -e "$path" ] ; then
+  if [[ ! -e "$path" ]]; then
       touch "$path"
   fi
-  
-  if [ ! -w "$path" ] ; then
+
+  if [[ ! -w "$path" ]]; then
     fancy_echo "Cannot write to $path"
+    echo "/dev/stdout"
     return 1
   fi
-  
+
   echo "$path"
 }
+
 
 append_to_shellrc() {
   local text="$1" rcpath
@@ -46,13 +49,8 @@ append_to_shellrc() {
 
   rcpath="$(shellrc_path)"
 
-  if [ "$?" -ne 0 ]; then
-    echo "Unable to resolve your shell's startup config file path" 1>&2
-    exit 1
-  fi
-
-  if ! grep -Fqs "$text" "$rcpath"; then
-    if [ "$skip_new_line" -eq 1 ]; then
+  if ! grep -Fqs "$text" "$rcpath" >/dev/null 2>&1; then
+    if [[ "$skip_new_line" -eq 1 ]]; then
       printf "%s\n" "$text" >> "$rcpath"
     else
       printf "\n%s\n" "$text" >> "$rcpath"
@@ -60,107 +58,181 @@ append_to_shellrc() {
   fi
 }
 
-# shellcheck disable=SC2154
-trap 'ret=$?; test $ret -ne 0 && printf "failed\n\n" >&2; exit $ret' EXIT
 
-set -e
+# die MESSAGE: logs MESSAGE and then exits non-zero
+#
+# Example:
+#
+#     writable "$directory" || die "not writable: $directory"
+die() {
+    local message
 
-HOMEBREW_PREFIX="$(brew --prefix)"
-if [ ! -e "$HOMEBREW_PREFIX" ] ; then
-  HOMEBREW_PREFIX="/usr/local"
-fi
+    # ${FUNCNAME[1]} evaluates to the name of the calling function.
+    message="${FUNCNAME[1]}: fatal error: *** $1"
 
-# Check for supported shell
-startup_path=$(shellrc_path)
-fancy_echo "Shell startup configuration will be added to: $startup_path"
+    echo "$message" 1>&2
+    exit 1
+}
 
-if [ -d "$HOMEBREW_PREFIX" ]; then
-  if ! [ -r "$HOMEBREW_PREFIX" ]; then
-    sudo chown -R "$LOGNAME:admin" /usr/local
-  fi
-else
-  sudo mkdir "$HOMEBREW_PREFIX"
-  sudo chflags norestricted "$HOMEBREW_PREFIX"
-  sudo chown -R "$LOGNAME:admin" "$HOMEBREW_PREFIX"
-fi
 
-gem_install_or_update() {
-  if gem list "$1" --installed > /dev/null; then
-    gem update "$@"
+announce_editing_shell_runconfig() {
+  startup_path=$(shellrc_path)
+  if [[ "$?" -ne 0 ]]; then
+    fancy_echo "Don't know how to hack your $SHELL rcfile. Intended changes will be logged using bash syntax; feel free to adapt to your shell."
   else
-    gem install "$@"
-    rbenv rehash
+    fancy_echo "Shell startup configuration will be added to: $startup_path"
+  fi
+  append_to_shellrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
+}
+
+
+ensure_homebrew_prefix_usable() {
+  echo "$FUNCNAME: Your Homebrew prefix is ${HOMEBREW_PREFIX:-/usr/local}. Let's ensure it's usable by Homebrew (it exists as a directory, and you can write to it)."
+  HOMEBREW_PREFIX="$(brew --prefix)"
+  if [[ ! -e "$HOMEBREW_PREFIX" ]]; then
+    HOMEBREW_PREFIX="/usr/local"
+  fi
+
+  current_group_name="$(id -ng)"
+  if [[ -d "$HOMEBREW_PREFIX" ]]; then
+    # brew update requires that HOMEBREW_PREFIX be writeable.
+    if [[ ! -w "$HOMEBREW_PREFIX" ]]; then
+      # chown -R was taking a glacial age to run,
+      # especially when the actual problem was the Google App Engine installer
+      # had decided that /usr/local itself should be owned by root:wheel.
+      # Thanks, Google!
+      #
+      # The -R looks like it works bottom-up, since it hadn't affected the
+      # actual target directory when I bailed, so let's hit that first
+      # in case the user decides to bail out during.
+      fancy_echo "Your password is required to run:
+    chown $LOGNAME:$current_group_name $HOMEBREW_PREFIX
+    && chown -R $LOGNAME:$current_group_name $HOMEBREW_PREFIX/*"
+      sudo chown "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX" \
+          && sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX" \
+          || die "failed to change ownership of $HOMEBREW_PREFIX"
+    fi
+  else
+    fancy_echo "Your password is required to run:
+    mkdir $HOMEBREW_PREFIX
+    && chflags norestricted $HOMEBREW_PREFIX
+    && chown -R $LOGNAME:$current_group_name $HOMEBREW_PREFIX"
+    sudo mkdir "$HOMEBREW_PREFIX" \
+      && sudo chflags norestricted "$HOMEBREW_PREFIX" \
+      && sudo chown -R "$LOGNAME:$current_group_name" "$HOMEBREW_PREFIX" \
+      || die "failed to make $HOMEBREW_PREFIX usable"
+  fi
+
+  echo "$FUNCNAME: $HOMEBREW_PREFIX should be usable by homebrew now."
+}
+
+
+update_homebrew() {
+  if ! command -v brew >/dev/null; then
+    fancy_echo "$FUNCNAME: Installing Homebrew, a handy OS X package manager (see http://brew.sh)."
+      curl -fsS \
+        'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
+
+      append_to_shellrc '# recommended by brew doctor'
+
+      # shellcheck disable=SC2016
+      append_to_shellrc 'export PATH="$HOMEBREW_PREFIX/bin:$PATH"' 1
+
+      export PATH="$HOMEBREW_PREFIX/bin:$PATH"
+  fi
+
+  if brew list | grep -Fq brew-cask; then
+    fancy_echo "$FUNCNAME: Looks like you still have the old brew-cask formula installed. Since December 2015, brew-cask is updated along with Homebrew itself, and the old formula should be installed. Let's take care of that. (If you want to read more, see: https://github.com/caskroom/homebrew-cask/pull/15381)"
+    fancy_echo "Uninstalling old Homebrew-Cask ..."
+    brew uninstall --force brew-cask
+  fi
+
+  echo "$FUNCNAME: Updating local package repository"
+  brew update
+
+  echo "$FUNCNAME: Installing/updating some CocoaPod essentials:"
+  cat Brewfile
+  brew bundle --verbose
+
+  if [[ -r "$HOME/.Brewfile" ]]; then
+    echo "$FUNCNAME: Installing/upgrading formulae listed in $HOME/.Brewfile."
+    brew bundle --global --verbose
   fi
 }
 
-append_to_shellrc '# Added by Big Nerd Ranch iOS/Mac Machine Bootstrap Script'
 
-if ! command -v brew >/dev/null; then
-  fancy_echo "Installing Homebrew ..."
-    curl -fsS \
-      'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
-
-    append_to_shellrc '# recommended by brew doctor'
-
-    # shellcheck disable=SC2016
-    append_to_shellrc 'export PATH="/usr/local/bin:$PATH"' 1
-
-    export PATH="/usr/local/bin:$PATH"
-fi
-
-if brew list | grep -Fq brew-cask; then
-  fancy_echo "Uninstalling old Homebrew-Cask ..."
-  brew uninstall --force brew-cask
-fi
-
-fancy_echo "Updating Homebrew formulae ..."
-brew update
-brew bundle --file=- <<EOF
-
-# Unix
-brew "git"
-brew "openssl"
-
-# GitHub
-brew "hub"
-
-# iOS/Mac
-brew "carthage"
-
-# Programming languages
-brew "rbenv"
-brew "ruby-build"
-
-EOF
-
-if [ -r Brewfile.local ]; then
-  fancy_echo "Installing local brews from Brewfile.local"
-  brew bundle --file=Brewfile.local
-fi
-
-fancy_echo "Configuring Ruby ..."
 find_latest_ruby() {
   rbenv install -l | grep -v - | tail -1 | sed -e 's/^ *//'
 }
 
-ruby_version="$(find_latest_ruby)"
-# shellcheck disable=SC2016
-append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
-eval "$(rbenv init -)"
 
-if ! rbenv versions | grep -Fq "$ruby_version"; then
-  RUBY_CONFIGURE_OPTS=--with-openssl-dir=/usr/local/opt/openssl rbenv install -s "$ruby_version"
-fi
+adopt_latest_ruby() {
+  fancy_echo "$FUNCNAME: Activating rbenv"
+  # shellcheck disable=SC2016
+  append_to_shellrc 'eval "$(rbenv init - --no-rehash)"' 1
+  eval "$(rbenv init -)"
 
-rbenv global "$ruby_version"
-rbenv shell "$ruby_version"
-gem update --system
-gem_install_or_update 'bundler'
-number_of_cores=$(sysctl -n hw.ncpu)
-bundle config --global jobs $((number_of_cores - 1))
+  ruby_version="$(find_latest_ruby)"
+  echo "$FUNCNAME: Latest ruby is $ruby_version."
 
-if [ -f "bootstrap.local" ]; then
-  fancy_echo "Running your customizations from bootstrap.local ..."
-  # shellcheck disable=SC1091
-  . "bootstrap.local"
-fi
+  if ! rbenv versions | grep -Fq "$ruby_version"; then
+    echo "$FUNCNAME: Ruby $ruby_version is not installed. Installing..."
+    RUBY_CONFIGURE_OPTS=--with-openssl-dir="$HOMEBREW_PREFIX/opt/openssl" \
+      rbenv install -s "$ruby_version"
+  fi
+
+  echo "$FUNCNAME: Setting global and shell Ruby versions to $ruby_version"
+  rbenv global "$ruby_version"
+  rbenv shell "$ruby_version"
+
+  echo "$FUNCNAME: Updating system gems..."
+  gem update --system
+
+  echo "$FUNCNAME: All done. Welcome to the brave new world of Ruby $ruby_version."
+}
+
+
+install_or_update_gem() {
+  if gem list "$1" --installed > /dev/null; then
+    gem update "$@"
+  else
+    gem install "$@"
+  fi
+  rbenv rehash
+}
+
+
+setup_bundler() {
+  local number_of_cores
+  local jobcount
+
+  fancy_echo "$FUNCNAME: Ensuring you have the bundler gem installed. This is used to create reliable, reproducible Ruby gem environments during development. Read more at: http://bundler.io/"
+  install_or_update_gem 'bundler'
+
+  number_of_cores=$(sysctl -n hw.ncpu)
+  jobcount=$((number_of_cores - 1))
+  bundle config --global jobs $jobcount
+  echo "$FUNCNAME: Configured bundler to run up to $jobcount jobs simultaneously, and you're good to go!"
+}
+
+
+run_bootstrap_local() {
+  if [[ -f "bootstrap.local" ]]; then
+    fancy_echo "Running your customizations from ./bootstrap.local..."
+    # shellcheck disable=SC1091
+    . "bootstrap.local"
+  fi
+}
+
+
+main() {
+  announce_editing_shell_runconfig
+  ensure_homebrew_prefix_usable
+  update_homebrew
+  adopt_latest_ruby
+  setup_bundler
+  run_bootstrap_local
+}
+
+
+main
