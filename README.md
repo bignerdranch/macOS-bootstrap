@@ -1,13 +1,26 @@
-Big Nerd Ranch iOS/Mac Machine Bootstrap Script
+Big Nerd Ranch iOS/macOS Machine Bootstrap Script
 ===============================================
 
-![](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap.svg?token=mjyegwmpGK1tsHqNiqGk&branch=master)
+[![Build Status](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap.svg?token=mjyegwmpGK1tsHqNiqGk&branch=master)](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap)
 
 Bootstrap script to get up and running developing iOS and Mac apps for Big Nerd Ranch
 
 It can be run multiple times on the same machine safely.
 It installs, upgrades, or skips packages
 based on what is already installed on the machine.
+
+What it DOESN'T do
+------------------
+
+* It will not change your shell
+	* If you're using bash or zsh we'll continue with setup, if not we'll safely exit and log what we found.
+* It will not install optional utilities
+	* This script aims to be the bare minimum needed for iOS development.
+	* See the lean [Brewfile] for each utilitiy installed
+	* To add your favorate utilities see [Local Customization])
+
+[Brewfile]: https://github.com/bignerdranch/cocoa-machine-bootstrap/blob/master/Brewfile
+[Local Customization]: https://github.com/bignerdranch/cocoa-machine-bootstrap#customize-in-bootstraplocal-and-brewfile
 
 What it sets up
 ---------------
@@ -70,95 +83,33 @@ A [Brewfile](https://github.com/Homebrew/homebrew-bundle) is like a Gemfile for 
 
 An example Brewfile looks like this:
 ```ruby
+# 3rd party Taps
 tap 'homebrew/bundle'
-tap 'thoughtbot/formulae'
-tap 'kevwil/patches'
+tap 'caskroom/cask'
 
+# Homebrew Packages
 brew 'ack'
-brew 'git'
-brew 'carthage'
-brew 'chisel'
-brew 'openssl'
-brew 'fish'
-brew 'gifsicle'
-brew 'go'
-brew 'heroku'
-brew 'irssi'
 brew 'keybase'
-brew 'leiningen'
-brew 'mogenerator'
-brew 'mutt'
-brew 'node'
-brew 'pandoc'
-brew 'ruby-build'
-brew 'rbenv'
-brew 'redis'
-brew 'the_silver_searcher'
 brew 'tmux'
-brew 'xcproj'
-brew 'xctool'
-brew 'rcm'	
+
+# Cask macOS Apps
+cask 'java'
+
+# Mac store Apps
+mas '1Password', id: 443987910
+mas 'Xcode', id: 497799835
 ``` 
 
 ### bootstrap.local
 
 Your `bootstrap.local` is run at the end of the BNR Bootstrap script.
 Put your customizations there.
-For example here is my .local:
+An example local script could look like this:
 
 ```bash
 #!/bin/bash
 
 readonly prefsLocalCheckoutPath="$HOME/app_prefs"
-
-update_dotfiles() {
-  fancy_echo "Updating dotfiles ..."
-
-  local dotfilesLocalCheckoutPath="$HOME/dotfiles"
-  local dotfilesRepoURL="git@github.com:rcedwards/dotfiles.git"
-
-  if [ -r "$dotfilesLocalCheckoutPath" ]; then
-    fancy_echo "Refreshing dotfiles from $dotfilesRepoURL ..."
-    update_cloned_repo "$dotfilesLocalCheckoutPath"
-  else
-    fancy_echo "Cloning dotfiles ..."
-    git clone "$dotfilesRepoURL" "$dotfilesLocalCheckoutPath"
-  fi
-
-  fancy_echo "Running rcm ..."
-  if [ -r "$HOME/.rcrc" ]; then
-    rcup
-  else
-    env RCRC="$dotfilesLocalCheckoutPath/rcrc" rcup
-  fi
-}
-
-fetch_application_preferences() {
-  fancy_echo "Setting up other app preferences ..."
-  
-  local prefsRepoURL="git@github.com:rcedwards/app_prefs"
-
-  if [ -r "$prefsLocalCheckoutPath" ]; then
-    fancy_echo "Updating application preferences from $prefsRepoURL ..."
-    update_cloned_repo "$prefsLocalCheckoutPath"
-  else
-    fancy_echo "Cloning application preferences ..."
-    git clone "$prefsRepoURL" "$prefsLocalCheckoutPath"
-  fi
-}
-
-update_cloned_repo() {
-  pushd "$1"
-  git pull
-  popd
-}
-
-link_sublime_text_prefs() {
-  fancy_echo "Linking sublime text configuration files ..."
-  local prefDestination="$HOME/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings"
-  local prefSource="$prefsLocalCheckoutPath/sublime/Preferences.sublime-settings"
-  ln -sF "$prefSource" "$prefDestination"
-}
 
 link_xcode_prefs() {
   fancy_echo "Linking xcode configuration files ..."
@@ -177,15 +128,8 @@ link_zsh_theme() {
   ln -sF "$zshThemeSource" "$zshThemeDest"
 }
 
-link_application_preferences() {
-  link_sublime_text_prefs
-  link_xcode_prefs
-  link_zsh_theme
-}
-
-update_dotfiles
-fetch_application_preferences
-link_application_preferences
+link_xcode_prefs
+link_zsh_theme
 ```
 
 Write your customizations such that they can be run safely more than once.
@@ -195,24 +139,11 @@ Script functions such as `fancy_echo` and
 `gem_install_or_update`
 can be used in your `~/.bootstrap.local`.
 
-See the [wiki](https://github.com/thoughtbot/laptop/wiki)
-for more customization examples.
-
-Debugging
----------
-
-Your last script run will be saved to `~/bootstrap.log`.
-Read through it to see if you can debug the issue yourself.
-If not, copy the lines where the script failed into a
-[new GitHub Issue](https://github.com/bignerdranch/cocoa-machine-bootstrap/issues/new).
-
 License
 -------
 
-This is heavily based on Thoughtbot's [Laptop script](https://github.com/thoughtbot/laptop)
+This script is heavily based on Thoughtbot's [Laptop script](https://github.com/thoughtbot/laptop)
 
-Laptop is © 2011-2016 thoughtbot, inc.
-It is free software,
-and may be redistributed under the terms specified in the [LICENSE] file.
+Thoughtbot's original work is covered under an MIT [license](THOUGHTBOT_LICENSE)
 
-[LICENSE]: THOUGHTBOT_LICENSE
+Big Nerd Ranch's modifications are also covered under an MIT [license](LICENSE.md)
