@@ -23,10 +23,6 @@ Unix tools:
 * [Git](https://git-scm.com/) for version control
 * [OpenSSL](https://www.openssl.org/) for Transport Layer Security (TLS)
 
-GitHub tools:
-
-* [Hub](http://hub.github.com/) for interacting with the GitHub API
-
 Ruby toolchain (this will be helpful for project Gems such as [Fastlane](https://fastlane.tools/) and [CocoaPods](https://cocoapods.org/):
 
 * [Bundler](http://bundler.io/) for managing Ruby libraries
