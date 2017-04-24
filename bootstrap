@@ -151,7 +151,8 @@ update_homebrew() {
   brew update
 
   echo "$FUNCNAME: Installing/updating some CocoaPod essentials:"
-  cat Brewfile
+  script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+  cat $script_dir/Brewfile
   brew bundle --verbose
 
   if [[ -r "$HOME/.Brewfile" ]]; then
