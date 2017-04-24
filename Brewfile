@@ -1,13 +1,12 @@
-# Basic utilities
-brew "git"
-brew "openssl"
+tap 'homebrew/bundle'
 
-# Extend git to work better with GitHub
-brew "hub"
+# Basic utilities
+brew 'git'
+brew 'openssl'
 
 # Pitch in a Cocoa package manager
-brew "carthage"
+brew 'carthage'
 
 # Ruby version management and installation
-brew "rbenv"
-brew "ruby-build"
+brew 'rbenv'
+brew 'ruby-build'
