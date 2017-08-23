@@ -36,7 +36,7 @@ Unix tools:
 * [Git](https://git-scm.com/) for version control
 * [OpenSSL](https://www.openssl.org/) for Transport Layer Security (TLS)
 
-Ruby toolchain (this will be helpful for project Gems such as [Fastlane](https://fastlane.tools/) and [CocoaPods](https://cocoapods.org/):
+Ruby toolchain (this will be helpful for project Gems such as [Fastlane](https://fastlane.tools/) and [CocoaPods](https://cocoapods.org/)):
 
 * [Bundler](http://bundler.io/) for managing Ruby libraries
 * [Rbenv](https://github.com/sstephenson/rbenv) for managing versions of Ruby
