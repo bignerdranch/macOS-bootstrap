@@ -1,7 +1,7 @@
 Big Nerd Ranch macOS Bootstrap Script
 ===============================================
 
-[![Build Status](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap.svg?token=mjyegwmpGK1tsHqNiqGk&branch=master)](https://travis-ci.com/bignerdranch/cocoa-machine-bootstrap)
+[![Build Status](https://travis-ci.com/bignerdranch/macOS-bootstrap.svg?token=mjyegwmpGK1tsHqNiqGk&branch=master)](https://travis-ci.com/bignerdranch/macOS-bootstrap)
 
 Bootstrap script to get up and running developing iOS, tvOS, watchOS, and macOS apps for Big Nerd Ranch
 
@@ -19,8 +19,8 @@ What it DOESN'T do
 	* See the lean [Brewfile] for each utilitiy installed
 	* To add your favorate utilities see [Local Customization])
 
-[Brewfile]: https://github.com/bignerdranch/cocoa-machine-bootstrap/blob/master/Brewfile
-[Local Customization]: https://github.com/bignerdranch/cocoa-machine-bootstrap#customize-in-bootstraplocal-and-brewfile
+[Brewfile]: https://github.com/bignerdranch/macOS-bootstrap/blob/master/Brewfile
+[Local Customization]: https://github.com/bignerdranch/macOS-bootstrap#customize-in-bootstraplocal-and-brewfile
 
 What it sets up
 ---------------
@@ -69,7 +69,7 @@ Install
 Clone, review, then execute the script:
 
 ```bash
-git clone git@github.com:bignerdranch/cocoa-machine-bootstrap.git
+git clone git@github.com:bignerdranch/macOS-bootstrap.git
 less repo_path/bootstrap
 bash repo_path/bootstrap
 ```
