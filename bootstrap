@@ -88,7 +88,7 @@ announce_editing_shell_runconfig() {
 
 
 ensure_homebrew_prefix_usable() {
-  echo "$FUNCNAME: Your Homebrew prefix is ${HOMEBREW_PREFIX:-/usr/local}. Let's ensure it's usable by Homebrew (it exists as a directory, and you can write to it)."
+  echo "$FUNCNAME: Your Homebrew prefix is ${HOMEBREW_PREFIX:-/usr/local}. Let's ensure it's usable by Homebrew (it exists as a directory, and you have read access)."
   HOMEBREW_PREFIX="$(brew --prefix)"
   if [[ ! -e "$HOMEBREW_PREFIX" ]]; then
     HOMEBREW_PREFIX="/usr/local"
@@ -96,8 +96,8 @@ ensure_homebrew_prefix_usable() {
 
   current_group_name="$(id -ng)"
   if [[ -d "$HOMEBREW_PREFIX" ]]; then
-    # brew update requires that HOMEBREW_PREFIX be writeable.
-    if [[ ! -w "$HOMEBREW_PREFIX" ]]; then
+    # brew update requires that HOMEBREW_PREFIX be readable.
+    if [[ ! -r "$HOMEBREW_PREFIX" ]]; then
       # chown -R was taking a glacial age to run,
       # especially when the actual problem was the Google App Engine installer
       # had decided that /usr/local itself should be owned by root:wheel.
