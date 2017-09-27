@@ -1,15 +1,17 @@
 language: bash
-sudo: required
+sudo: false
 dist: trusty
 
 cache:
-- apt
+  - apt
 
-before_install:
-    - echo "deb http://archive.ubuntu.com/ubuntu/ wily universe" | sudo tee -a /etc/apt/sources.list
-    - sudo apt-get update -q
-    - sudo apt-get install shellcheck -y
-    
+addons:
+  apt:
+    sources:
+    - debian-sid
+    packages:
+    - shellcheck
+
 script:
   # Run shellcheck with some diagnostic exclusions:
   #
