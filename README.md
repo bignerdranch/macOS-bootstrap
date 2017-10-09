@@ -62,6 +62,7 @@ Operating System:
 * OS X Yosemite (10.10)
 * OS X El Capitan (10.11)
 * macOS Sierra (10.12) 
+* masOS High Sierra (10.13)
 
 Install
 -------
