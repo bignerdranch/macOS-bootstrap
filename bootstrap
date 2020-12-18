@@ -131,8 +131,8 @@ ensure_homebrew_prefix_usable() {
 update_homebrew() {
   if ! command -v brew >/dev/null; then
     fancy_echo "$FUNCNAME: Installing Homebrew, a handy OS X package manager (see http://brew.sh)."
-      curl -fsS \
-        'https://raw.githubusercontent.com/Homebrew/install/master/install' | ruby
+
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
       append_to_shellrc '# recommended by brew doctor'
 
